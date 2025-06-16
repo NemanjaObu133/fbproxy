@@ -9,21 +9,26 @@ const PORT = process.env.PORT || 3000;
 app.get("/adaccounts", async (req, res) => {
   try {
     const accessToken = process.env.FB_ACCESS_TOKEN;
-    const url = `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,id,account_status,amount_spent,spend_cap&access_token=${accessToken}`;
+    let url = `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,id,account_status,amount_spent,spend_cap&access_token=${accessToken}`;
+    
+    let allData = [];
+    while (url) {
+      const response = await fetch(url);
+      const json = await response.json();
 
-    const response = await fetch(url);
-    const data = await response.json();
+      if (json.data) {
+        allData = allData.concat(json.data);
+      }
 
-    if (!response.ok) {
-      return res.status(500).json({ error: data });
+      url = json.paging && json.paging.next ? json.paging.next : null;
     }
 
-    res.json(data);
+    res.json({ data: allData });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch data from Facebook API.", details: err.message });
+    res.status(500).json({ error: "Failed to fetch data", details: err.message });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy server running on port ${PORT}`);
+  console.log(`Proxy running on port ${PORT}`);
 });
