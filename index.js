@@ -1,34 +1,19 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-dotenv.config();
-
+const express = require("express");
+const fetch = require("node-fetch");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get("/adaccounts", async (req, res) => {
+app.get("*", async (req, res) => {
+  const url = `https://graph.facebook.com/v19.0${req.originalUrl}`;
   try {
-    const accessToken = process.env.FB_ACCESS_TOKEN;
-    let url = `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,id,account_status,amount_spent,spend_cap&access_token=${accessToken}`;
-    
-    let allData = [];
-    while (url) {
-      const response = await fetch(url);
-      const json = await response.json();
-
-      if (json.data) {
-        allData = allData.concat(json.data);
-      }
-
-      url = json.paging && json.paging.next ? json.paging.next : null;
-    }
-
-    res.json({ data: allData });
+    const fbRes = await fetch(url);
+    const data = await fbRes.json();
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch data", details: err.message });
+    res.status(500).json({ error: err.toString() });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy running on port ${PORT}`);
+  console.log(`Proxy server running on port ${PORT}`);
 });
